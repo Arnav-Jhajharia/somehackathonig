@@ -1,7 +1,6 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import * as Haptics from 'expo-haptics';
-import { router, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { router } from 'expo-router';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -141,11 +140,21 @@ const RARITY_COLORS = {
 
 export default function AllMissionsScreen() {
   const insets = useSafeAreaInsets();
-  const missions = ALL_MISSIONS.singapore;
+  const params = useLocalSearchParams();
+  const currentCity = (params.city as string) || 'singapore';
+  const [selectedCity, setSelectedCity] = useState(currentCity);
+
+  const missions = ALL_MISSIONS_DATA[selectedCity] || ALL_MISSIONS_DATA.singapore;
+  const cityName = CITY_NAMES[selectedCity] || 'Singapore';
 
   const handleMissionPress = (missionId: string) => {
     Haptics.selectionAsync();
     router.push(`/mission/${missionId}`);
+  };
+
+  const handleCityChange = (city: string) => {
+    Haptics.selectionAsync();
+    setSelectedCity(city);
   };
 
   return (
@@ -159,8 +168,36 @@ export default function AllMissionsScreen() {
 
         <Text style={styles.pageTitle}>All Missions</Text>
         <Text style={styles.pageSubtitle}>
-          {missions.length} missions available in Singapore
+          {missions.length} missions available in {cityName}
         </Text>
+
+        {/* City Selector */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.citySelectorScroll}
+          style={styles.citySelector}
+        >
+          {Object.keys(ALL_MISSIONS_DATA).map((city) => (
+            <Pressable
+              key={city}
+              onPress={() => handleCityChange(city)}
+              style={[
+                styles.cityChip,
+                selectedCity === city && styles.cityChipActive,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.cityChipText,
+                  selectedCity === city && styles.cityChipTextActive,
+                ]}
+              >
+                {CITY_NAMES[city]}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
 
         {/* Mission Cards */}
         {missions.map((mission) => (
@@ -356,6 +393,34 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#16A34A',
     fontFamily: 'system font',
+  },
+  citySelector: {
+    marginBottom: 24,
+  },
+  citySelectorScroll: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  cityChip: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#E7E2DC',
+  },
+  cityChipActive: {
+    backgroundColor: '#B89A5C',
+    borderColor: '#B89A5C',
+  },
+  cityChipText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#6B7280',
+    fontFamily: 'system font',
+  },
+  cityChipTextActive: {
+    color: '#FFFFFF',
   },
 });
 

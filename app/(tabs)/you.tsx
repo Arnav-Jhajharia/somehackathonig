@@ -2,7 +2,7 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { router } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Circle, Line } from 'react-native-svg';
+import Svg, { Circle, Ellipse, Line, Path } from 'react-native-svg';
 
 type CountryVisit = {
   id: string;
@@ -10,7 +10,8 @@ type CountryVisit = {
   flag: string;
   missionsCompleted: number;
   totalRewards: number;
-  position: { x: number; y: number }; // Position on the map
+  position: { x: number; y: number }; // Position on the map (relative to viewBox)
+  visited: number; // Visit order
 };
 
 type CompletedMission = {
@@ -22,10 +23,22 @@ type CompletedMission = {
   type: 'global' | 'local';
 };
 
+// Affluent traveler Bob has been to many places!
 const COUNTRIES_VISITED: CountryVisit[] = [
-  { id: 'sg', name: 'Singapore', flag: '🇸🇬', missionsCompleted: 8, totalRewards: 1240, position: { x: 220, y: 140 } },
-  { id: 'jp', name: 'Japan', flag: '🇯🇵', missionsCompleted: 3, totalRewards: 650, position: { x: 260, y: 80 } },
-  { id: 'us-nyc', name: 'USA (NYC)', flag: '🗽', missionsCompleted: 2, totalRewards: 420, position: { x: 60, y: 70 } },
+  { id: 'sg', name: 'Singapore', flag: '🇸🇬', missionsCompleted: 12, totalRewards: 3240, position: { x: 710, y: 280 }, visited: 1 },
+  { id: 'jp', name: 'Japan', flag: '🇯🇵', missionsCompleted: 15, totalRewards: 4650, position: { x: 770, y: 190 }, visited: 2 },
+  { id: 'hk', name: 'Hong Kong', flag: '🇭🇰', missionsCompleted: 8, totalRewards: 2420, position: { x: 700, y: 250 }, visited: 3 },
+  { id: 'th', name: 'Thailand', flag: '🇹🇭', missionsCompleted: 10, totalRewards: 2100, position: { x: 650, y: 260 }, visited: 4 },
+  { id: 'ae', name: 'UAE (Dubai)', flag: '🇦🇪', missionsCompleted: 9, totalRewards: 5200, position: { x: 520, y: 250 }, visited: 5 },
+  { id: 'uk', name: 'United Kingdom', flag: '🇬🇧', missionsCompleted: 18, totalRewards: 6850, position: { x: 420, y: 140 }, visited: 6 },
+  { id: 'fr', name: 'France', flag: '🇫🇷', missionsCompleted: 14, totalRewards: 7200, position: { x: 440, y: 160 }, visited: 7 },
+  { id: 'it', name: 'Italy', flag: '🇮🇹', missionsCompleted: 11, totalRewards: 4300, position: { x: 470, y: 180 }, visited: 8 },
+  { id: 'ch', name: 'Switzerland', flag: '🇨🇭', missionsCompleted: 7, totalRewards: 5400, position: { x: 455, y: 165 }, visited: 9 },
+  { id: 'us-nyc', name: 'USA (NYC)', flag: '🗽', missionsCompleted: 22, totalRewards: 8920, position: { x: 240, y: 180 }, visited: 10 },
+  { id: 'us-la', name: 'USA (LA)', flag: '🌴', missionsCompleted: 16, totalRewards: 5600, position: { x: 120, y: 200 }, visited: 11 },
+  { id: 'us-sf', name: 'USA (SF)', flag: '🌉', missionsCompleted: 12, totalRewards: 4800, position: { x: 110, y: 185 }, visited: 12 },
+  { id: 'au', name: 'Australia', flag: '🇦🇺', missionsCompleted: 13, totalRewards: 3900, position: { x: 780, y: 360 }, visited: 13 },
+  { id: 'nz', name: 'New Zealand', flag: '🇳🇿', missionsCompleted: 9, totalRewards: 2800, position: { x: 850, y: 385 }, visited: 14 },
 ];
 
 const COMPLETED_MISSIONS: CompletedMission[] = [
@@ -33,7 +46,10 @@ const COMPLETED_MISSIONS: CompletedMission[] = [
   { id: '2', name: 'Marina Bay Sands Skyline', country: 'Singapore', reward: 250, completedDate: new Date(Date.now() - 86400000 * 5), type: 'local' },
   { id: '3', name: 'Michelin Madness', country: 'Singapore', reward: 750, completedDate: new Date(Date.now() - 86400000 * 7), type: 'global' },
   { id: '4', name: 'Shibuya Crossing Quest', country: 'Japan', reward: 500, completedDate: new Date(Date.now() - 86400000 * 15), type: 'local' },
-  { id: '5', name: 'Broadway Show Experience', country: 'USA', reward: 450, completedDate: new Date(Date.now() - 86400000 * 30), type: 'local' },
+  { id: '5', name: 'Broadway Show Experience', country: 'USA (NYC)', reward: 450, completedDate: new Date(Date.now() - 86400000 * 30), type: 'local' },
+  { id: '6', name: 'Eiffel Tower Fine Dining', country: 'France', reward: 1200, completedDate: new Date(Date.now() - 86400000 * 45), type: 'global' },
+  { id: '7', name: 'Sydney Opera House Tour', country: 'Australia', reward: 380, completedDate: new Date(Date.now() - 86400000 * 60), type: 'local' },
+  { id: '8', name: 'Dubai Desert Safari Luxury', country: 'UAE (Dubai)', reward: 920, completedDate: new Date(Date.now() - 86400000 * 75), type: 'local' },
 ];
 
 export default function YouScreen() {
@@ -79,51 +95,96 @@ export default function YouScreen() {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Your Travel Journey</Text>
         <View style={styles.mapContainer}>
-          <Svg width="100%" height={200} viewBox="0 0 300 200">
-            {/* Draw lines connecting countries */}
-            {COUNTRIES_VISITED.map((country, index) => {
+          <Svg width="100%" height={280} viewBox="0 0 1000 500" style={styles.worldMap}>
+            {/* Simplified world map continents (light gray background) */}
+            
+            {/* North America */}
+            <Path
+              d="M 80 120 Q 100 100, 140 100 L 220 110 Q 240 120, 250 150 L 260 200 Q 250 230, 230 240 L 180 250 Q 150 240, 130 220 L 90 200 Q 75 170, 80 120 Z"
+              fill="#E5E7EB"
+              opacity={0.3}
+            />
+            
+            {/* Europe */}
+            <Path
+              d="M 400 100 Q 420 90, 450 95 L 490 110 Q 500 130, 495 150 L 480 180 Q 465 185, 450 180 L 415 160 Q 400 140, 400 100 Z"
+              fill="#E5E7EB"
+              opacity={0.3}
+            />
+            
+            {/* Asia */}
+            <Path
+              d="M 500 100 Q 550 90, 650 110 L 780 130 Q 820 150, 830 190 L 820 260 Q 800 280, 760 290 L 680 300 Q 620 280, 580 250 L 520 200 Q 500 150, 500 100 Z"
+              fill="#E5E7EB"
+              opacity={0.3}
+            />
+            
+            {/* Australia */}
+            <Ellipse
+              cx="790"
+              cy="370"
+              rx="80"
+              ry="50"
+              fill="#E5E7EB"
+              opacity={0.3}
+            />
+            
+            {/* Africa/Middle East */}
+            <Path
+              d="M 450 200 Q 470 190, 500 200 L 540 240 Q 545 280, 535 330 L 510 360 Q 480 365, 460 350 L 440 310 Q 435 260, 450 200 Z"
+              fill="#E5E7EB"
+              opacity={0.3}
+            />
+            
+            {/* Draw curved lines connecting countries in travel order */}
+            {COUNTRIES_VISITED.sort((a, b) => a.visited - b.visited).map((country, index) => {
               if (index < COUNTRIES_VISITED.length - 1) {
-                const nextCountry = COUNTRIES_VISITED[index + 1];
-                return (
-                  <Line
-                    key={`line-${country.id}`}
-                    x1={country.position.x}
-                    y1={country.position.y}
-                    x2={nextCountry.position.x}
-                    y2={nextCountry.position.y}
-                    stroke="#B89A5C"
-                    strokeWidth="2"
-                    strokeDasharray="5,5"
-                    opacity={0.6}
-                  />
-                );
+                const nextCountry = COUNTRIES_VISITED.find(c => c.visited === country.visited + 1);
+                if (nextCountry) {
+                  // Calculate control point for curve (makes arc)
+                  const midX = (country.position.x + nextCountry.position.x) / 2;
+                  const midY = (country.position.y + nextCountry.position.y) / 2 - 30;
+                  
+                  return (
+                    <Path
+                      key={`path-${country.id}`}
+                      d={`M ${country.position.x} ${country.position.y} Q ${midX} ${midY}, ${nextCountry.position.x} ${nextCountry.position.y}`}
+                      stroke="#B89A5C"
+                      strokeWidth="2.5"
+                      fill="none"
+                      strokeDasharray="6,4"
+                      opacity={0.7}
+                    />
+                  );
+                }
               }
               return null;
             })}
             
-            {/* Draw country dots */}
-            {COUNTRIES_VISITED.map((country, index) => (
+            {/* Draw country dots with glow effect */}
+            {COUNTRIES_VISITED.map((country) => (
               <Circle
-                key={country.id}
+                key={`dot-${country.id}`}
                 cx={country.position.x}
                 cy={country.position.y}
-                r="8"
+                r="10"
                 fill="#B89A5C"
                 stroke="#FFFFFF"
-                strokeWidth="2"
+                strokeWidth="3"
+                opacity={0.95}
               />
             ))}
           </Svg>
           
-          {/* Country labels */}
+          {/* Country flag labels positioned absolutely */}
           {COUNTRIES_VISITED.map((country) => (
             <View
               key={`label-${country.id}`}
               style={[
                 styles.countryLabel,
                 {
-                  left: (country.position.x / 300) * 100 + '%',
-                  top: (country.position.y / 200) * 100 + '%',
+                  left: `${(country.position.x / 1000) * 100}%`,
+                  top: `${(country.position.y / 500) * 100}%`,
                 },
               ]}
             >
@@ -306,7 +367,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 8,
     position: 'relative',
-    height: 200,
+    height: 280,
+    overflow: 'hidden',
+  },
+  worldMap: {
+    backgroundColor: '#FAFAFA',
   },
   countryLabel: {
     position: 'absolute',

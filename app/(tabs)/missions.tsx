@@ -2,17 +2,16 @@ import { useStartMission } from '@/app/api/hooks';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import * as Haptics from 'expo-haptics';
 import { AppleMaps, GoogleMaps } from 'expo-maps';
-import { router } from 'expo-router';
 import { useRef, useState } from 'react';
 import {
-  Animated,
-  Image,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View
+    Animated,
+    Image,
+    Platform,
+    Pressable,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -636,9 +635,8 @@ export default function MissionsListScreen() {
   const handleStartMission = () => {
     if (selectedMission) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      startMutation.mutate();
       handleCloseSheet();
-      // Navigate to mission detail page
-      router.push(`/mission/${selectedMission.id}`);
     }
   };
 
@@ -955,21 +953,10 @@ export default function MissionsListScreen() {
         </View>
       )}
 
-      {/* Small indicator bar at bottom */}
-      <Pressable 
-        onPress={() => router.push(`/all-missions?city=${currentCity}` as any)}
-        style={[styles.missionsIndicatorBar, { paddingBottom: insets.bottom + 12 }]}
-      >
-        <View style={styles.indicatorContent}>
-          <IconSymbol name="chevron.up" size={20} color="#6B7280" />
-          <Text style={styles.indicatorText}>All Missions ({filteredMissions.length})</Text>
-        </View>
-      </Pressable>
-
       {/* Travel Elsewhere Button */}
       <Pressable
         onPress={handleOpenTravelModal}
-        style={[styles.travelButton, { bottom: insets.bottom + 80 }]}
+        style={[styles.travelButton, { bottom: insets.bottom + 100 }]}
       >
         <Text style={styles.travelButtonIcon}>✈️</Text>
         <Text style={styles.travelButtonText}>Travel Elsewhere</Text>
@@ -1436,34 +1423,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     color: '#FFFFFF',
-    fontFamily: 'system font',
-  },
-  missionsIndicatorBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#FFFFFF',
-    paddingTop: 12,
-    paddingHorizontal: 16,
-    borderTopWidth: 1,
-    borderTopColor: '#E7E2DC',
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  indicatorContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  indicatorText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#6B7280',
     fontFamily: 'system font',
   },
   travelButton: {
