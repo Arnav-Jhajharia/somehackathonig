@@ -36,24 +36,22 @@ export function ThemedText({
 const styles = StyleSheet.create({
   default: {
     fontSize: 16,
-    lineHeight: 24,
+    // Keep system sans; Kugile only for accent titles
   },
   defaultSemiBold: {
     fontSize: 16,
-    lineHeight: 24,
     fontWeight: '600',
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 32,
+    fontSize: 36,
+    fontWeight: '700',
+    fontFamily: 'Kugile',
   },
   subtitle: {
     fontSize: 20,
     fontWeight: 'bold',
   },
   link: {
-    lineHeight: 30,
     fontSize: 16,
     color: '#0a7ea4',
   },
