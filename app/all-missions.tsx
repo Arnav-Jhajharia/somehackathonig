@@ -1,6 +1,7 @@
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import * as Haptics from 'expo-haptics';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import React, { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -214,7 +215,7 @@ export default function AllMissionsScreen() {
             
             {/* Badges */}
             <View style={styles.badgesOverlay}>
-              <View style={[styles.rarityBadge, { backgroundColor: RARITY_COLORS[mission.rarity] }]}>
+              <View style={[styles.rarityBadge, { backgroundColor: RARITY_COLORS[mission.rarity as keyof typeof RARITY_COLORS] }]}>
                 <Text style={styles.rarityText}>{mission.rarity.toUpperCase()}</Text>
               </View>
               {mission.type && (
